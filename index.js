@@ -100,8 +100,12 @@ app.get('/authorize', (req, res) => {
       ? `${FA_URL}/oauth2/authorize`
       : `https://${AUTH0_DOMAIN}/authorize`;
 
-  const params = new URLSearchParams(req.query).toString();
-  res.redirect(`${upstream}?${params}`);
+  const query = { ...req.query };
+  if (AUTH_PROVIDER === 'fusionauth') {
+    query.client_id = FA_APPLICATION_ID;
+  }
+
+  res.redirect(`${upstream}?${new URLSearchParams(query)}`);
 });
 
 // ─── Health check ─────────────────────────────────────────────────────────────

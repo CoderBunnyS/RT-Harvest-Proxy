@@ -25,6 +25,10 @@ The proxy matches users by email. Every user must exist in FusionAuth **before**
 
 Import users via the FusionAuth admin UI or bulk import API before proceeding.
 
+Each user must also be **registered to the FA application** (not just exist in FA). Being in FA isn't enough — FusionAuth requires application registration before it will accept an RT import for that user.
+
+In FA admin: **Users → [user] → Registrations tab → Add registration → select your application**
+
 ---
 
 ## Step 2 - Add the Auth0 post-login Action
@@ -41,44 +45,40 @@ exports.onExecutePostLogin = async (event, api) => {
 };
 ```
 
-1. Click **Deploy**
-2. Go to **Actions → Triggers → post-login** and drag your new action into the flow
-3. Click **Apply**
+4. Click **Deploy**
+5. Go to **Actions → Triggers → post-login** and drag your new action into the flow
+6. Click **Apply**
 
 ---
 
 ## Step 3 - Configure FusionAuth
 
 ### Create or confirm your application
-
 In FA admin: **Applications → your app → OAuth tab**
 
 Make note of:
-
 - **Client ID** - this is your `FA_APPLICATION_ID`
 - **Client secret** - this is your `FA_CLIENT_SECRET`
 
 ### Set a generous refresh token lifetime
-
-The harvested RT must still be valid when users return after cutover. Set the lifetime to cover your full harvest window.
+The proxy imports RTs with `startInstant` set to the time of import (not the original Auth0 issue time). FA uses `startInstant` to calculate expiration based on your configured lifetime. Set the lifetime long enough that users who log in at the start of your harvest window still have a valid RT when you cut over.
 
 In FA admin: **Applications → your app → OAuth tab → Refresh token time-to-live**
 
-### Get your API key
+Recommended: 30 days minimum, or longer than your planned harvest window.
 
+### Get your API key
 The proxy needs an API key with permission to read users and import refresh tokens.
 
 In FA admin: **Settings → API Keys → Add API key**
 
 Required permissions:
-
 - `GET /api/user` - user lookup
 - `POST /api/user/refresh-token/import` - RT import
 
 Note the key value - this is your `FA_API_KEY`.
 
 ### Get your Tenant ID
-
 In FA admin: **Tenants → your tenant** - the ID is shown at the top.
 
 ---
@@ -119,7 +119,7 @@ PORT=3001
 **Where to find each value:**
 
 | Variable | Where to find it |
-| --- | --- |
+|---|---|
 | `AUTH0_DOMAIN` | Auth0 → Settings → General → Domain |
 | `AUTH0_CLIENT_ID` | Auth0 → Applications → your app → Settings |
 | `AUTH0_CLIENT_SECRET` | Auth0 → Applications → your app → Settings |
@@ -136,18 +136,16 @@ PORT=3001
 Change your app's Auth0 base URL to point at the proxy instead.
 
 Before:
-
-```text
+```
 https://your-tenant.us.auth0.com
 ```
 
 After:
-
-```text
+```
 http://localhost:3001   (or wherever the proxy is hosted)
 ```
 
-Your app's client ID, client secret, and redirect URIs stay the same - the proxy handles the credential swap to FA automatically.
+Your app's client ID, client secret, and redirect URIs stay the same - the proxy handles the credential swap to FA automatically on both the `/authorize` redirect and the `/oauth/token` exchange.
 
 ---
 
@@ -159,7 +157,7 @@ npm start
 
 Have users log in normally. For each login, you should see:
 
-```text
+```
 [import] RT imported for user@example.com (userId: ...)
 ```
 
@@ -181,7 +179,7 @@ Existing sessions will silently exchange their harvested RT for a FA-issued acce
 
 ## Verifying the cutover worked
 
-After flipping to FusionAuth, trigger a token refresh in your app (any action that causes the app to call the token endpoint with a refresh token). In FA admin, check Users → [user] → Sessions tab - the "Last accessed" timestamp should update, confirming FA handled the exchange.
+After flipping to FusionAuth, trigger a token refresh in your app (any action that causes the app to call the token endpoint with a refresh token). In FA admin, check **Users → [user] → Sessions tab** - the "Last accessed" timestamp should update, confirming FA handled the exchange.
 
 ---
 
@@ -194,7 +192,7 @@ Set `AUTH_PROVIDER=auth0` and restart. Sessions will resume against Auth0. No da
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
-| --- | --- | --- |
+|---|---|---|
 | `[import] no email claim in access token` | Auth0 Action not deployed or not in flow | Re-check Step 2 |
 | `[import] no FA user found for email` | User not migrated to FA | Import the user first |
 | `invalid_client` error after cutover | Wrong or missing `FA_CLIENT_SECRET` | Check `.env` and restart |
