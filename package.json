@@ -1,0 +1,16 @@
+{
+  "name": "rt-harvester-proxy",
+  "version": "1.0.0",
+  "description": "Auth0 → FusionAuth refresh token migration proxy",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.0"
+  }
+}
