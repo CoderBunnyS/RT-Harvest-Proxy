@@ -70,7 +70,8 @@ app.post('/oauth/token', async (req, res) => {
   }
 
   console.log('[proxy] upstream status:', upstreamRes.status, 'has RT:', !!upstreamRes.data.refresh_token);
-  console.log('[proxy] upstream body:', JSON.stringify(upstreamRes.data));
+  //Debug command
+  //console.log('[proxy] upstream body:', JSON.stringify(upstreamRes.data));
 
   // Return the upstream response to the app immediately — no added latency.
   res.status(upstreamRes.status).json(upstreamRes.data);
@@ -135,7 +136,8 @@ app.get('/health', (_req, res) => {
 async function importToFA(tokenBody) {
   // Decode the AT (without verifying signature — we just need the email claim)
   const claims = jwt.decode(tokenBody.access_token);
-  console.log('[debug] AT claims:', JSON.stringify(claims));
+  //Debug command
+  //console.log('[debug] AT claims:', JSON.stringify(claims));
   const email = claims?.email;
 
   if (!email) {
