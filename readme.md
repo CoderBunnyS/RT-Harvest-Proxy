@@ -25,7 +25,7 @@ The proxy matches users by email. Every user must exist in FusionAuth **before**
 
 Import users via the FusionAuth admin UI or bulk import API before proceeding.
 
-Each user must also be **registered to the FA application** (not just exist in FA). Being in FA isn't enough — FusionAuth requires application registration before it will accept an RT import for that user.
+Each user must also be **registered to the FA application** (not just exist in FA). Being in FA isn't enough - FusionAuth requires application registration before it will accept an RT import for that user.
 
 In FA admin: **Users → [user] → Registrations tab → Add registration → select your application**
 
